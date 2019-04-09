@@ -36,28 +36,30 @@ mktempf () {
 }
 
 TMP1=$(mktempf)
-ifconfig gif0 | sed -n -E -e 's/^[[:space:]]+inet6[[:space:]]+([^[:space:]]+)[[:space:]].*$/\1/p' >"$TMP1"
+TMP2=$(mktempf)
 while true; do
   ip6=$(/usr/local/bin/openssl rand -hex 8 | sed -E -e 's/([[:xdigit:]]{4,4})([[:xdigit:]]{4,4})([[:xdigit:]]{4,4})([[:xdigit:]]{4,4})/'$PREFIX'\1:\2:\3:\4/')
   ip6=$(/usr/local/bin/ipv6calc --addr_to_compressed "$ip6")
-  ndp -na | cut -w -f 1 | sed -E -e 's/%.*$//' >"$TMP1"
+  ifconfig "$IFN" | sed -n -E -e 's/^[[:space:]]+inet6[[:space:]]+([^[:space:]]+)[[:space:]].*$/\1/p' >"$TMP2"
+  ndp -na | cut -w -f 1 | sed -E -e 's/%.*$//' >>"$TMP2"
+  sort -f "$TMP2" | uniq -i >"$TMP1"
   echo "$ip6" >>"$TMP1"
   d=$(sort -f "$TMP1" | uniq -id)
-  [ -z "$d" ] || continue
-  ifconfig "$IFN" inet6 "$ip6" prefixlen "$PREFIXLEN" alias prefer_source
-  tail -r "$IFFILE" >"$TMP1"
-  head -n 5 "$TMP1" | while read -r ip; do
-    ifconfig "$IFN" inet6 "$ip" deprecated
-  done
-  tail -n +6 "$TMP1" | while read -r ip; do
-    ifconfig "$IFN" inet6 "$ip" -alias
-  done
-  tail -n 5 "$IFFILE" >"$TMP1"
-  echo "$ip6"        >>"$TMP1"
-  cat "$TMP1" >"$IFFILE"
-  break
+  [ -z "$d" ] && break
 done
 
-rm -f "$TMP1"
+ifconfig "$IFN" inet6 "$ip6" prefixlen "$PREFIXLEN" alias prefer_source
+tail -r "$IFFILE" >"$TMP1"
+head -n 5 "$TMP1" | while read -r ip; do
+  ifconfig "$IFN" inet6 "$ip" deprecated
+done
+tail -n +6 "$TMP1" | while read -r ip; do
+  ifconfig "$IFN" inet6 "$ip" -alias
+done
+tail -n 5 "$IFFILE" >"$TMP1"
+echo "$ip6"        >>"$TMP1"
+cat "$TMP1" >"$IFFILE"
+
+rm -f "$TMP1" "$TMP2"
 
 # end of file
