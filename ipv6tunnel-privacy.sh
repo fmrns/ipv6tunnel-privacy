@@ -62,4 +62,6 @@ cat "$TMP1" >"$IFFILE"
 
 rm -f "$TMP1" "$TMP2"
 
+rc=0
+
 # end of file
