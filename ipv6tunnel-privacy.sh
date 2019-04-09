@@ -41,7 +41,7 @@ while true; do
   ip6=$(/usr/local/bin/openssl rand -hex 8 | sed -E -e 's/([[:xdigit:]]{4,4})([[:xdigit:]]{4,4})([[:xdigit:]]{4,4})([[:xdigit:]]{4,4})/'$PREFIX'\1:\2:\3:\4/')
   ip6=$(/usr/local/bin/ipv6calc --addr_to_compressed "$ip6")
   ifconfig "$IFN" | sed -n -E -e 's/^[[:space:]]+inet6[[:space:]]+([^[:space:]]+)[[:space:]].*$/\1/p' >"$TMP2"
-  ndp -na | cut -w -f 1 | sed -E -e 's/%.*$//' >>"$TMP2"
+  ndp -na | tail -n +2 | cut -w -f 1 | sed -E -e 's/%.*$//' >>"$TMP2"
   sort -f "$TMP2" | uniq -i >"$TMP1"
   echo "$ip6" >>"$TMP1"
   d=$(sort -f "$TMP1" | uniq -id)
